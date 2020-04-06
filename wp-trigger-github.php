@@ -22,15 +22,21 @@ class WPTriggerGithub
 {
   function __construct()
   {
-    add_action('admin_init', array($this, 'general_settings_section'));
-    add_action('save_post', array($this, 'run_hook'), 10, 3);
+    add_action('admin_menu', array($this, 'add_menu'), 9);
+    add_action('admin_init', array($this, 'create_settings_section'));
+
+    $option = get_option('option_trigger');
+    if ($option['chkbox2']) {
+      add_action('save_post', array($this, 'run_hook'), 10, 3);
+    }
+
     add_action('wp_dashboard_setup', array($this, 'build_dashboard_widget'));
   }
 
   public function activate()
   {
     flush_rewrite_rules();
-    $this->general_settings_section();
+    $this->create_settings_section();
   }
 
   public function deactivate()
@@ -65,59 +71,26 @@ class WPTriggerGithub
     }
   }
 
-  function general_settings_section()
+  function add_menu ()
   {
-    add_settings_section(
-      'general_settings_section',
+    add_menu_page(
       'WP Trigger Github Settings',
-      array($this, 'my_section_options_callback'),
-      'general'
+      'WP Trigger Github',
+      'administrator',
+      __FILE__,
+      array( $this, 'display_settings_page' ),
+      plugins_url('/images/GitHub-Mark-Light-20px.png', __FILE__)
     );
-    add_settings_field(
-      'option_username',
-      'Repository Owner Name',
-      array($this, 'my_textbox_callback'),
-      'general',
-      'general_settings_section',
-      array(
-        'option_username'
-      )
-    );
-    add_settings_field(
-      'option_repo',
-      'Repository Name',
-      array($this, 'my_textbox_callback'),
-      'general',
-      'general_settings_section',
-      array(
-        'option_repo'
-      )
-    );
-    add_settings_field(
-      'option_token',
-      'Personal Access Token',
-      array($this, 'my_password_callback'),
-      'general',
-      'general_settings_section',
-      array(
-        'option_token'
-      )
-    );
-    add_settings_field(
-      'option_workflow',
-      'Actions Workflow Name',
-      array($this, 'my_textbox_callback'),
-      'general',
-      'general_settings_section',
-      array(
-        'option_workflow'
-      )
-    );
+  }
 
-    register_setting('general', 'option_token', 'esc_attr');
-    register_setting('general', 'option_username', 'esc_attr');
-    register_setting('general', 'option_repo', 'esc_attr');
-    register_setting('general', 'option_workflow', 'esc_attr');
+  function display_settings_page ()
+  {
+		require_once plugin_dir_path( __FILE__ ) . '/wp-trigger-github-admin-display.php';
+  }
+
+  function create_settings_section()
+  {
+    require_once plugin_dir_path( __FILE__ ) . '/wp-trigger-github-setting-fields.php';
   }
 
   function my_section_options_callback()
@@ -135,6 +108,12 @@ class WPTriggerGithub
   {
     $option = get_option($args[0]);
     echo '<input type="password" id="' . $args[0] . '" name="' . $args[0] . '" value="' . $option . '" />';
+  }
+
+  function my_checkbox_callback($args) {
+    $option = get_option($args[0]);
+  	if($option['chkbox2']) { $checked = ' checked="checked" '; }
+  	echo "<input ".$checked." id='" . $args[0] . "' name='" . $args[0] . "' type='checkbox' />";
   }
 
   /**
